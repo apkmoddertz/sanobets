@@ -91,7 +91,7 @@ if (!user) {
 
   // Group by date
   const groupedPredictions = filteredPredictions.reduce((groups, prediction) => {
-    const date = new Date(prediction.startTime).toLocaleDateString(undefined, {
+    const date = new Date(prediction.date).toLocaleDateString(undefined, {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
