@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Calendar, Check, X, User, Shield, Lock, Clock, Loader2, AlertCircle } from 'lucide-react';
+import { Search, Calendar, Check, X, User, Shield, Lock, Loader2, AlertCircle } from 'lucide-react';
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
+import { UserProfile } from '../types';
 
-interface AppUser {
+interface AppUser extends UserProfile {
   id: string;
-  email: string;
-  subscription: 'free' | 'safe' | 'fixed';
-  billing: 'weekly' | 'monthly' | null;
-  status: 'active' | 'inactive';
-  expires: string | null;
 }
 
 export default function UserManagement() {
@@ -41,6 +37,7 @@ export default function UserManagement() {
             billing: data.billing || null,
             status: data.status || 'inactive',
             expires: data.expires || null,
+            createdAt: data.createdAt
           } as AppUser);
         });
         setUsers(fetchedUsers);

@@ -31,15 +31,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [isAdminMode, setIsAdminMode] = useState(false);
 
-  const ADMIN_EMAIL = 'ngimbabetwin@gmail.com';
-  const isAdmin = user?.email === ADMIN_EMAIL;
-
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+
       if (currentUser) {
         try {
-          // Sync user to Firestore if not exists
           const userRef = doc(db, "users", currentUser.uid);
           const userSnap = await getDoc(userRef);
           
@@ -60,29 +57,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUserProfile(newProfile);
           }
         } catch (error: any) {
-          // Ignore offline errors as they are expected in some environments
-          if (error?.code === 'unavailable' || error?.message?.includes('offline')) {
-             console.log("Firestore sync skipped (offline)");
-          } else {
-             console.error("Error syncing user to Firestore:", error);
-          }
+          console.error("Error syncing user to Firestore:", error);
+        } finally {
+          setLoading(false);
         }
       } else {
-        // User logged out
         setUserProfile(null);
-        setIsAdminMode(false);
+        setLoading(false);
       }
-
-      if (currentUser?.email === ADMIN_EMAIL) {
-        setIsAdminMode(true);
-      } else {
-        setIsAdminMode(false);
-      }
-      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
+
+  const isAdmin = user?.email === 'ngimbabetwin@gmail.com';
+
+  useEffect(() => {
+    if (isAdmin) {
+      setIsAdminMode(true);
+    } else {
+      setIsAdminMode(false);
+    }
+  }, [user, isAdmin]);
 
   const toggleAdminMode = () => {
     if (isAdmin) {

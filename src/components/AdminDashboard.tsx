@@ -1,7 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Prediction } from '../types';
-import { Plus, Edit2, Trash2, Save, X, Filter, Database } from 'lucide-react';
-import { usePredictions } from '../context/PredictionContext';
+import { Plus, Edit2, Trash2, Save, X, Filter, Database, Loader2 } from 'lucide-react';
+import { db, auth } from '../lib/firebase';
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  query, 
+  orderBy, 
+  onSnapshot,
+  serverTimestamp,
+  where
+} from 'firebase/firestore';
+import { useAuth } from '../context/AuthContext';
 
 interface AdminDashboardProps {
   currentView: 'free' | 'safe' | 'fixed' | 'account';
@@ -9,7 +22,9 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ currentView }: AdminDashboardProps) {
-  const { predictions, updatePrediction, deletePrediction, addPrediction } = usePredictions();
+  const { user } = useAuth();
+  const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Prediction>>({});
   
@@ -20,79 +35,78 @@ export default function AdminDashboard({ currentView }: AdminDashboardProps) {
     odds: 1.50
   });
 
-  const [isSeeding, setIsSeeding] = useState(false);
+  useEffect(() => {
+    if (!user) return;
 
-  const handleSeed = async () => {
-    if (!confirm('This will add 8 matches to EACH category (24 total), distributed 2 per day. Continue?')) return;
-    
-    setIsSeeding(true);
-    try {
-      const categories: ('Free' | 'Safe' | 'Fixed')[] = ['Free', 'Safe', 'Fixed'];
-      const teams = [
-        ['Arsenal', 'Chelsea'], ['Liverpool', 'Man City'], ['Real Madrid', 'Barcelona'],
-        ['Bayern', 'Dortmund'], ['PSG', 'Marseille'], ['Juventus', 'Milan'],
-        ['Inter', 'Napoli'], ['Ajax', 'PSV'], ['Porto', 'Benfica']
-      ];
-      
-      const now = new Date();
-      
-      for (const category of categories) {
-        for (let i = 0; i < 8; i++) {
-          // Distribute 2 matches per day
-          // i=0,1 -> day 0
-          // i=2,3 -> day 1
-          // i=4,5 -> day 2
-          // i=6,7 -> day 3
-          const dayOffset = Math.floor(i / 2);
-          const matchDate = new Date(now);
-          matchDate.setDate(now.getDate() + dayOffset);
-          // Set random time between 12:00 and 22:00
-          matchDate.setHours(12 + Math.floor(Math.random() * 10), 0, 0, 0);
+    const q = query(
+      collection(db, "matches"),
+      orderBy("date", "desc") // Updated to use 'date'
+    );
 
-          const teamPair = teams[i % teams.length];
-          
-          const prediction: Prediction = {
-            id: Math.random().toString(36).substr(2, 9),
-            league: 'Seed League',
-            homeTeam: teamPair[0],
-            awayTeam: teamPair[1],
-            startTime: matchDate.toISOString(),
-            prediction: 'Home Win',
-            odds: 1.5 + (Math.random() * 2), // Random odds between 1.5 and 3.5
-            category: category,
-            status: 'Pending',
-            analysis: `Analysis for match ${i+1} in ${category}`
-          };
-          
-          await addPrediction(prediction);
-        }
-      }
-      alert('Database seeded successfully!');
-    } catch (error) {
-      console.error("Seeding failed:", error);
-      alert('Seeding failed. Check console.');
-    } finally {
-      setIsSeeding(false);
-    }
-  };
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const matches = snapshot.docs.map(doc => {
+        const data = doc.data();
+        // Helper to capitalize first letter
+        const capitalize = (s: string) => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
+
+        return {
+          id: doc.id,
+          league: data.league || 'Unknown League',
+          homeTeam: data.homeTeam || 'Home Team',
+          awayTeam: data.awayTeam || 'Away Team',
+          startTime: data.date || new Date().toISOString(), // Map 'date' to 'startTime'
+          prediction: data.prediction || 'Pending',
+          odds: parseFloat(data.odd || data.odds || '1.0'), // Map 'odd' (string) to 'odds' (number)
+          category: (capitalize(data.category) as any) || 'Free', // Map 'free' to 'Free'
+          status: (capitalize(data.status) as any) || 'Pending', // Map 'pending' to 'Pending'
+          analysis: data.analysis,
+          result: data.result
+        } as Prediction;
+      });
+      setPredictions(matches);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching matches:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   const handleEdit = (pred: Prediction) => {
     setIsEditing(pred.id);
     setEditForm(pred);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!isEditing) return;
-    updatePrediction({ ...predictions.find(p => p.id === isEditing)!, ...editForm } as Prediction);
-    setIsEditing(null);
+    
+    try {
+      const matchRef = doc(db, "matches", isEditing);
+      await updateDoc(matchRef, {
+        prediction: editForm.prediction,
+        odd: editForm.odds?.toString() || "1.0", // Map 'odds' back to 'odd' (string)
+        category: editForm.category?.toLowerCase(), // Lowercase
+        status: editForm.status?.toLowerCase() // Lowercase
+      });
+      setIsEditing(null);
+    } catch (error) {
+      console.error("Error updating match:", error);
+      alert("Failed to update match");
+    }
   };
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteId) {
-      deletePrediction(deleteId);
-      setDeleteId(null);
+      try {
+        await deleteDoc(doc(db, "matches", deleteId));
+        setDeleteId(null);
+      } catch (error) {
+        console.error("Error deleting match:", error);
+        alert("Failed to delete match");
+      }
     }
   };
 
@@ -100,28 +114,32 @@ export default function AdminDashboard({ currentView }: AdminDashboardProps) {
     setDeleteId(id);
   };
 
-  const handleAdd = () => {
-    if (!newPrediction.homeTeam || !newPrediction.awayTeam || !newPrediction.prediction) {
+  const handleAdd = async () => {
+    if (!newPrediction.homeTeam || !newPrediction.awayTeam || !newPrediction.prediction || !newPrediction.startTime) {
       alert('Please fill in all required fields');
       return;
     }
 
-    const prediction: Prediction = {
-      id: Math.random().toString(36).substr(2, 9),
-      league: newPrediction.league || 'Unknown League',
-      homeTeam: newPrediction.homeTeam,
-      awayTeam: newPrediction.awayTeam,
-      startTime: newPrediction.startTime || new Date().toISOString(),
-      prediction: newPrediction.prediction,
-      odds: newPrediction.odds || 1.0,
-      category: newPrediction.category as any || 'Free',
-      status: newPrediction.status as any || 'Pending',
-      analysis: newPrediction.analysis
-    };
+    try {
+      await addDoc(collection(db, "matches"), {
+        league: newPrediction.league || 'Unknown League',
+        homeTeam: newPrediction.homeTeam,
+        awayTeam: newPrediction.awayTeam,
+        date: newPrediction.startTime, // Map 'startTime' back to 'date'
+        prediction: newPrediction.prediction,
+        odd: newPrediction.odds?.toString() || "1.0", // Map 'odds' back to 'odd' (string)
+        category: newPrediction.category?.toLowerCase() || 'free', // Lowercase
+        status: newPrediction.status?.toLowerCase() || 'pending', // Lowercase
+        createdBy: user?.email,
+        createdAt: serverTimestamp()
+      });
 
-    addPrediction(prediction);
-    setIsAdding(false);
-    setNewPrediction({ category: 'Free', status: 'Pending', odds: 1.50 });
+      setIsAdding(false);
+      setNewPrediction({ category: 'Free', status: 'Pending', odds: 1.50 });
+    } catch (error) {
+      console.error("Error adding match:", error);
+      alert("Failed to add match");
+    }
   };
 
   // Filter predictions based on the selected tab (currentView)
@@ -131,6 +149,14 @@ export default function AdminDashboard({ currentView }: AdminDashboardProps) {
     if (currentView === 'fixed') return p.category === 'Fixed';
     return true;
   });
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <Loader2 className="animate-spin text-emerald-500" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-24">
@@ -145,14 +171,6 @@ export default function AdminDashboard({ currentView }: AdminDashboardProps) {
           <p className="text-gray-400 text-sm">Manage {currentView} predictions and content</p>
         </div>
         <div className="flex gap-2">
-          <button 
-            onClick={handleSeed}
-            disabled={isSeeding}
-            className="bg-[#25262b] hover:bg-[#2c2e33] text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors border border-white/5 disabled:opacity-50"
-          >
-            <Database size={18} className="text-purple-500" />
-            <span className="hidden sm:inline">{isSeeding ? 'Seeding...' : 'Seed DB'}</span>
-          </button>
           <button 
             onClick={() => setIsAdding(true)}
             className="bg-emerald-500 hover:bg-emerald-400 text-black px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors"
@@ -256,6 +274,7 @@ export default function AdminDashboard({ currentView }: AdminDashboardProps) {
                     <td className="px-4 py-3">
                       <div className="font-medium text-white">{pred.homeTeam} vs {pred.awayTeam}</div>
                       <div className="text-xs text-gray-500">{pred.league}</div>
+                      <div className="text-xs text-gray-600">{new Date(pred.startTime).toLocaleString()}</div>
                     </td>
                     <td className="px-4 py-3">
                       {isEditing === pred.id ? (
