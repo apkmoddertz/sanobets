@@ -90,18 +90,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await firebaseSignOut(auth);
     setIsAdminMode(false);
   };
-const isAppLoading = loading || (user && !userProfile);
 
-return (
-  <AuthContext.Provider value={{ user, userProfile, loading, isAdmin, isAdminMode, toggleAdminMode, signOut }}>
-    {isAppLoading ? (
-      <div className="min-h-screen flex items-center justify-center bg-[#141517]">
-        <Loader2 className="animate-spin text-emerald-500" size={32} />
-      </div>
-    ) : (
-      children
-    )}
-  </AuthContext.Provider>
-);
-  
+  return (
+    <AuthContext.Provider value={{ user, userProfile, loading, isAdmin, isAdminMode, toggleAdminMode, signOut }}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
 };
