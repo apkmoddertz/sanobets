@@ -92,8 +92,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, isAdmin, isAdminMode, toggleAdminMode, signOut }}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+  <AuthContext.Provider
+    value={{
+      user,
+      userProfile,
+      loading,
+      isAdmin,
+      isAdminMode,
+      toggleAdminMode,
+      signOut
+    }}
+  >
+    {children}
+  </AuthContext.Provider>
+);
 };
