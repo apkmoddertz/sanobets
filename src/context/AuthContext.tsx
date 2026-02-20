@@ -31,63 +31,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [isAdminMode, setIsAdminMode] = useState(false);
 
-  /**
-   * 1️⃣ AUTH LISTENER (ONLY handles login state)
-   * This will NEVER block UI.
-   */
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      setLoading(false); // 🔥 Always stop loading immediately
+
+      if (currentUser) {
+        try {
+          const userRef = doc(db, "users", currentUser.uid);
+          const userSnap = await getDoc(userRef);
+          
+          if (userSnap.exists()) {
+            setUserProfile(userSnap.data() as UserProfile);
+          } else {
+            const newProfile: UserProfile = {
+              email: currentUser.email!,
+              subscription: "free",
+              billing: null,
+              status: "active",
+              expires: null
+            };
+            await setDoc(userRef, {
+              ...newProfile,
+              createdAt: new Date().toISOString()
+            });
+            setUserProfile(newProfile);
+          }
+        } catch (error: any) {
+          console.error("Error syncing user to Firestore:", error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setUserProfile(null);
+        setLoading(false);
+      }
     });
 
-    return unsubscribe;
+    return () => unsubscribe();
   }, []);
 
-  /**
-   * 2️⃣ FIRESTORE PROFILE SYNC (separate from auth)
-   * This does NOT control loading.
-   */
-  useEffect(() => {
-    if (!user) {
-      setUserProfile(null);
-      return;
-    }
-
-    const syncUserProfile = async () => {
-      try {
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
-
-        if (userSnap.exists()) {
-          setUserProfile(userSnap.data() as UserProfile);
-        } else {
-          const newProfile: UserProfile = {
-            email: user.email!,
-            subscription: "free",
-            billing: null,
-            status: "active",
-            expires: null
-          };
-
-          await setDoc(userRef, {
-            ...newProfile,
-            createdAt: new Date().toISOString()
-          });
-
-          setUserProfile(newProfile);
-        }
-      } catch (error) {
-        console.error("Firestore sync error:", error);
-      }
-    };
-
-    syncUserProfile();
-  }, [user]);
-
-  /**
-   * 3️⃣ ADMIN CHECK
-   */
   const isAdmin = user?.email === 'ngimbabetwin@gmail.com';
 
   useEffect(() => {
@@ -96,11 +78,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else {
       setIsAdminMode(false);
     }
-  }, [isAdmin]);
+  }, [user, isAdmin]);
 
   const toggleAdminMode = () => {
     if (isAdmin) {
-      setIsAdminMode(prev => !prev);
+      setIsAdminMode(!isAdminMode);
     }
   };
 
@@ -110,18 +92,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        userProfile,
-        loading,
-        isAdmin,
-        isAdminMode,
-        toggleAdminMode,
-        signOut
-      }}
-    >
-      {children}
+    <AuthContext.Provider value={{ user, userProfile, loading, isAdmin, isAdminMode, toggleAdminMode, signOut }}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
