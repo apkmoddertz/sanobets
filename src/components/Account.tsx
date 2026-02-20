@@ -1,6 +1,7 @@
 import React from 'react';
 import { User, CreditCard, LogOut, Send, Calendar } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom'; // <-- added
 
 interface AccountProps {
   onOpenPremium: () => void;
@@ -9,7 +10,8 @@ interface AccountProps {
 
 export default function Account({ onOpenPremium, onNavigate }: AccountProps) {
   const { user, userProfile, signOut, isAdmin, toggleAdminMode, isAdminMode } = useAuth();
-  
+  const navigate = useNavigate(); // <-- added
+
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-gray-500">
@@ -130,9 +132,17 @@ export default function Account({ onOpenPremium, onNavigate }: AccountProps) {
         </div>
       )}
 
+      {/* Log Out Button with redirect */}
       <div className="bg-[#1a1b1e] rounded-xl border border-white/5 overflow-hidden">
         <button 
-          onClick={() => signOut()}
+          onClick={async () => {
+            try {
+              await signOut();      // sign out user
+              navigate('/login');   // redirect to login page
+            } catch (err) {
+              console.error('Sign out failed', err);
+            }
+          }}
           className="w-full flex items-center gap-4 p-4 hover:bg-red-500/10 transition-colors text-left group"
         >
           <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors">
