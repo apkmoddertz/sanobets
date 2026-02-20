@@ -81,7 +81,7 @@ export default function PredictionCard({ prediction, isLocked = false, onOpenPre
         </div>
         <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
           <Clock size={12} />
-          {formatDate(prediction.startTime)}
+          {formatDate(prediction.date)}
         </div>
       </div>
 
