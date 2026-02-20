@@ -83,9 +83,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    await firebaseSignOut(auth);
-    setIsAdminMode(false);
-  };
+  // Immediately reset all user-related state
+  setUserProfile(null);
+  setIsAdminMode(false);
+  setUser(null);
+
+  // Then call Firebase sign out
+  await firebaseSignOut(auth);
+};
 
   // App is still loading if auth is loading OR user exists but profile hasn't loaded yet
   const isAppLoading = loading || (user && !userProfile);
