@@ -12,10 +12,21 @@ interface AuthModalProps {
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [isLogin, setIsLogin] = useState(true);
+  const [regStep, setRegStep] = useState(1);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handleNextStep = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.includes('@')) {
+      setError('Please enter a valid email');
+      return;
+    }
+    setError('');
+    setRegStep(2);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,8 +39,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
       }
-      // Auto-refresh to ensure clean state after login
-      window.location.reload();
+      // Removed window.location.reload() for smoother transition
+      onClose();
     } catch (err: any) {
       console.error("Auth Modal Error:", err);
       const authError = err as AuthError;
@@ -48,6 +59,14 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
   };
 
+  const resetModal = () => {
+    setIsLogin(true);
+    setRegStep(1);
+    setEmail('');
+    setPassword('');
+    setError('');
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -56,7 +75,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={() => { resetModal(); onClose(); }}
             className="fixed inset-0 bg-black/80 z-[100] backdrop-blur-sm"
           />
           <motion.div
@@ -66,7 +85,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[#1a1b1e] rounded-2xl border border-white/10 p-6 z-[101] shadow-2xl"
           >
             <button 
-              onClick={onClose}
+              onClick={() => { resetModal(); onClose(); }}
               className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
             >
               <X size={20} />
@@ -74,49 +93,69 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-white mb-2">
-                {isLogin ? 'Welcome Back' : 'Create Account'}
+                {isLogin ? 'Welcome Back' : regStep === 1 ? 'Join Sano Bet' : 'Set Password'}
               </h2>
               <p className="text-gray-400 text-sm">
-                {isLogin ? 'Sign in to access your account' : 'Join Sano Bet today'}
+                {isLogin ? 'Sign in to access your account' : regStep === 1 ? 'Step 1: Enter your email' : 'Step 2: Secure your account'}
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={isLogin || regStep === 2 ? handleSubmit : handleNextStep} className="space-y-4">
               {error && (
                 <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-3 rounded-lg text-center">
                   {error}
                 </div>
               )}
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-400 ml-1">Email</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-[#25262b] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                    placeholder="Enter your email"
-                    required
-                  />
-                </div>
-              </div>
+              <AnimatePresence mode="wait">
+                {isLogin || regStep === 1 ? (
+                  <motion.div
+                    key="email"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    className="space-y-1"
+                  >
+                    <label className="text-xs font-medium text-gray-400 ml-1">Email</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full bg-[#25262b] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                        placeholder="Enter your email"
+                        required
+                        autoFocus
+                      />
+                    </div>
+                  </motion.div>
+                ) : null}
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-400 ml-1">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-[#25262b] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                    placeholder="Enter your password"
-                    required
-                  />
-                </div>
-              </div>
+                {(isLogin || regStep === 2) && (
+                  <motion.div
+                    key="password"
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    className="space-y-1"
+                  >
+                    <label className="text-xs font-medium text-gray-400 ml-1">Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full bg-[#25262b] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                        placeholder="Enter your password"
+                        required
+                        autoFocus={!isLogin}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <button
                 type="submit"
@@ -126,7 +165,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 {loading ? (
                   <Loader2 className="animate-spin" size={20} />
                 ) : (
-                  isLogin ? 'Sign In' : 'Create Account'
+                  isLogin ? 'Sign In' : regStep === 1 ? 'Continue' : 'Create Account'
                 )}
               </button>
             </form>
@@ -135,7 +174,11 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <p className="text-sm text-gray-400">
                 {isLogin ? "Don't have an account? " : "Already have an account? "}
                 <button
-                  onClick={() => setIsLogin(!isLogin)}
+                  onClick={() => {
+                    setIsLogin(!isLogin);
+                    setRegStep(1);
+                    setError('');
+                  }}
                   className="text-emerald-400 hover:text-emerald-300 font-medium"
                 >
                   {isLogin ? 'Sign Up' : 'Log In'}

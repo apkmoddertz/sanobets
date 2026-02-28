@@ -6,10 +6,21 @@ import { motion, AnimatePresence } from 'motion/react';
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
+  const [regStep, setRegStep] = useState(1);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handleNextStep = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.includes('@')) {
+      setError('Please enter a valid email');
+      return;
+    }
+    setError('');
+    setRegStep(2);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,8 +33,7 @@ export default function LoginPage() {
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
       }
-      // Auto-refresh to ensure clean state after login
-      window.location.reload();
+      // Removed window.location.reload() to avoid blank screen and use React state instead
     } catch (err: any) {
       console.error("Login Error:", err);
       const authError = err as AuthError;
@@ -133,13 +143,13 @@ export default function LoginPage() {
           {/* Modern Tab Switcher */}
           <div className="bg-black/40 p-1.5 rounded-2xl mb-8 relative flex items-center border border-white/5">
             <button
-              onClick={() => setIsLogin(true)}
+              onClick={() => { setIsLogin(true); setRegStep(1); setError(''); }}
               className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all relative z-10 ${isLogin ? 'text-black' : 'text-gray-500 hover:text-gray-300'}`}
             >
               SIGN IN
             </button>
             <button
-              onClick={() => setIsLogin(false)}
+              onClick={() => { setIsLogin(false); setRegStep(1); setError(''); }}
               className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all relative z-10 ${!isLogin ? 'text-black' : 'text-gray-500 hover:text-gray-300'}`}
             >
               REGISTER
@@ -153,12 +163,12 @@ export default function LoginPage() {
 
           <AnimatePresence mode="wait">
             <motion.form 
-              key={isLogin ? 'login' : 'register'}
+              key={isLogin ? 'login' : `register-step-${regStep}`}
               initial={{ opacity: 0, x: isLogin ? -20 : 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: isLogin ? 20 : -20 }}
               transition={{ duration: 0.3 }}
-              onSubmit={handleSubmit} 
+              onSubmit={isLogin || regStep === 2 ? handleSubmit : handleNextStep} 
               className="space-y-4"
             >
               {error && (
@@ -173,33 +183,39 @@ export default function LoginPage() {
               )}
 
               <div className="space-y-4">
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-emerald-500 transition-colors">
-                    <Mail size={20} />
+                {(isLogin || regStep === 1) && (
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-emerald-500 transition-colors">
+                      <Mail size={20} />
+                    </div>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder-gray-600 font-bold"
+                      placeholder="EMAIL ADDRESS"
+                      required
+                      autoFocus
+                    />
                   </div>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder-gray-600 font-bold"
-                    placeholder="EMAIL ADDRESS"
-                    required
-                  />
-                </div>
+                )}
 
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-emerald-500 transition-colors">
-                    <Lock size={20} />
+                {(isLogin || regStep === 2) && (
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-emerald-500 transition-colors">
+                      <Lock size={20} />
+                    </div>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder-gray-600 font-bold"
+                      placeholder="PASSWORD"
+                      required
+                      autoFocus={!isLogin}
+                    />
                   </div>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder-gray-600 font-bold"
-                    placeholder="PASSWORD"
-                    required
-                  />
-                </div>
+                )}
               </div>
 
               <button
@@ -219,7 +235,9 @@ export default function LoginPage() {
                   </div>
                 ) : (
                   <>
-                    <span className="tracking-widest uppercase">{isLogin ? 'ENTER ARENA' : 'JOIN THE ELITE'}</span>
+                    <span className="tracking-widest uppercase">
+                      {isLogin ? 'ENTER ARENA' : regStep === 1 ? 'CONTINUE' : 'JOIN THE ELITE'}
+                    </span>
                     <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                   </>
                 )}
@@ -231,7 +249,7 @@ export default function LoginPage() {
             <p className="text-xs text-gray-500 font-bold tracking-widest uppercase">
               {isLogin ? "Don't have an account? " : "Already a member? "}
               <button
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={() => { setIsLogin(!isLogin); setRegStep(1); setError(''); }}
                 className="text-emerald-500 hover:text-emerald-400 transition-colors ml-1"
               >
                 {isLogin ? 'REGISTER NOW' : 'SIGN IN'}

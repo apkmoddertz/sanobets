@@ -76,5 +76,6 @@ export interface UserProfile {
   billing: 'weekly' | 'monthly' | null;
   status: 'active' | 'inactive';
   expires: string | null;
+  onboardingCompleted?: boolean;
   createdAt?: string;
 }

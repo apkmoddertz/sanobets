@@ -18,6 +18,7 @@ import { PredictionProvider, usePredictions } from './context/PredictionContext'
 import { Trophy, Shield, Lock, Loader2, Calendar } from 'lucide-react';
 
 import UserManagement from './components/UserManagement';
+import OnboardingQuiz from './components/OnboardingQuiz';
 
 function AppContent() {
   const { user, userProfile, loading, isAdminMode } = useAuth();
@@ -39,16 +40,25 @@ function AppContent() {
     window.scrollTo(0, 0);
   }, []);
 
-  if (loading) {
+  // Show loader while auth is initializing OR while user is logged in but profile is still fetching
+  if (loading || (user && !userProfile)) {
     return (
       <div className="min-h-screen bg-[#141517] flex items-center justify-center">
-        <Loader2 className="animate-spin text-emerald-500" size={32} />
+        <div className="text-center">
+          <Loader2 className="animate-spin text-emerald-500 mb-4 mx-auto" size={32} />
+          <p className="text-gray-500 text-sm animate-pulse">Entering Arena...</p>
+        </div>
       </div>
     );
   }
 
   if (!user) {
     return <LoginPage />;
+  }
+
+  // Show onboarding quiz for new users
+  if (userProfile && userProfile.onboardingCompleted === false && !isAdminMode) {
+    return <OnboardingQuiz />;
   }
 
   if (isAdminMode) {

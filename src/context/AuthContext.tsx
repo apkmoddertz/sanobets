@@ -9,6 +9,7 @@ interface UserProfile {
   billing: 'weekly' | 'monthly' | null;
   status: 'active' | 'inactive';
   expires: string | null;
+  onboardingCompleted?: boolean;
 }
 
 interface AuthContextType {
@@ -55,7 +56,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               subscription: "free",
               billing: null,
               status: "active",
-              expires: null
+              expires: null,
+              onboardingCompleted: false
             };
             await setDoc(userRef, {
               ...newProfile,
