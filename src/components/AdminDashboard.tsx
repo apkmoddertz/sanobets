@@ -21,7 +21,7 @@ interface AdminDashboardProps {
   onNavigate: (view: 'free' | 'safe' | 'fixed' | 'account') => void;
 }
 
-export default function AdminDashboard({ currentView }: AdminDashboardProps) {
+export default function AdminDashboard({ currentView, onNavigate }: AdminDashboardProps) {
   const { user } = useAuth();
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);

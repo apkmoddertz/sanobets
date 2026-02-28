@@ -34,6 +34,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      
+      // Set admin mode immediately if it's the admin
+      if (currentUser?.email === 'ngimbabetwin@gmail.com') {
+        setIsAdminMode(true);
+      } else {
+        setIsAdminMode(false);
+      }
 
       if (currentUser) {
         try {
@@ -71,14 +78,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const isAdmin = user?.email === 'ngimbabetwin@gmail.com';
-
-  useEffect(() => {
-    if (isAdmin) {
-      setIsAdminMode(true);
-    } else {
-      setIsAdminMode(false);
-    }
-  }, [user, isAdmin]);
 
   const toggleAdminMode = () => {
     if (isAdmin) {

@@ -27,6 +27,13 @@ function AppContent() {
   const [activeCategory, setActiveCategory] = useState('soccer');
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
 
+  // Reset to free view on login
+  React.useEffect(() => {
+    if (user) {
+      setCurrentView('free');
+    }
+  }, [user]);
+
   // Scroll to top on mount (login/refresh)
   React.useEffect(() => {
     window.scrollTo(0, 0);

@@ -9,7 +9,7 @@ interface PredictionCardProps {
   onOpenPremium?: () => void;
 }
 
-export default function PredictionCard({ prediction, isLocked = false, onOpenPremium }: PredictionCardProps) {
+const PredictionCard: React.FC<PredictionCardProps> = ({ prediction, isLocked = false, onOpenPremium }) => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', {
       weekday: 'short',
@@ -127,4 +127,6 @@ export default function PredictionCard({ prediction, isLocked = false, onOpenPre
       </div>
     </motion.div>
   );
-}
+};
+
+export default PredictionCard;

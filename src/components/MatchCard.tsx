@@ -290,7 +290,7 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onToggleBet, selectedBets 
                           className={getButtonClass(`cs_${key}`)}
                         >
                           <span className="text-xs opacity-60 mb-0.5">{scoreLabel}</span>
-                          <span>{value.toFixed(2)}</span>
+                          <span>{(value as number).toFixed(2)}</span>
                         </button>
                       );
                     })}

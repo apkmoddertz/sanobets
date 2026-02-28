@@ -15,18 +15,59 @@ export interface Prediction {
   createdAt?: any; // Firestore Timestamp
 }
 
+export interface Bet {
+  matchId: string;
+  selectionId: string;
+  selectionLabel: string;
+  odds: number;
+  matchLabel: string;
+}
+
+export interface PlacedBet {
+  id: string;
+  userId: string;
+  bets: Bet[];
+  selections: Bet[];
+  totalOdds: number;
+  stake: number;
+  potentialWin: number;
+  potentialReturn: number;
+  status: 'pending' | 'won' | 'lost' | 'Won' | 'Lost';
+  createdAt: string;
+  date: string;
+}
+
 export interface Match {
-  id?: string;
+  id: string;
   league: string;
   homeTeam: string;
   awayTeam: string;
-  date: string;
-  prediction: string;
-  odds: number;
+  startTime: string;
+  status: 'Upcoming' | 'Live' | 'Finished' | 'pending' | 'win' | 'lose';
+  score?: {
+    home: number;
+    away: number;
+  };
+  odds: {
+    home: number;
+    draw: number;
+    away: number;
+    doubleChance?: {
+      homeDraw: number;
+      homeAway: number;
+      drawAway: number;
+    };
+    overUnder?: {
+      over25: number;
+      under25: number;
+    };
+    btts?: {
+      yes: number;
+      no: number;
+    };
+    correctScore?: Record<string, number>;
+  };
   category: 'free' | 'safe' | 'fixed';
-  status: 'pending' | 'win' | 'lose';
-  createdBy: string;
-  createdAt: any;
 }
 
 export interface UserProfile {

@@ -8,6 +8,7 @@ export const MOCK_MATCHES: Match[] = [
     awayTeam: 'Liverpool',
     startTime: '2024-03-10T16:30:00Z',
     status: 'Upcoming',
+    category: 'free',
     odds: {
       home: 2.10,
       draw: 3.50,
@@ -44,6 +45,7 @@ export const MOCK_MATCHES: Match[] = [
     awayTeam: 'Barcelona',
     startTime: '2024-03-10T20:00:00Z',
     status: 'Live',
+    category: 'free',
     score: {
       home: 1,
       away: 1
@@ -84,6 +86,7 @@ export const MOCK_MATCHES: Match[] = [
     awayTeam: 'AC Milan',
     startTime: '2024-03-11T19:45:00Z',
     status: 'Upcoming',
+    category: 'free',
     odds: {
       home: 2.40,
       draw: 3.20,
@@ -120,6 +123,7 @@ export const MOCK_MATCHES: Match[] = [
     awayTeam: 'Dortmund',
     startTime: '2024-03-12T18:30:00Z',
     status: 'Upcoming',
+    category: 'free',
     odds: {
       home: 1.85,
       draw: 4.00,
@@ -156,6 +160,7 @@ export const MOCK_MATCHES: Match[] = [
     awayTeam: 'Arsenal',
     startTime: '2024-03-13T20:00:00Z',
     status: 'Upcoming',
+    category: 'free',
     odds: {
       home: 2.25,
       draw: 3.40,
