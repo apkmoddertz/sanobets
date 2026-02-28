@@ -144,8 +144,8 @@ export default function Sidebar({ isOpen, onClose, activeCategory, onSelectCateg
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-white/5 text-xs text-gray-500 text-center">
-        &copy; 2024 Sano Bet. All rights reserved.
+      <div className="p-4 border-t border-white/5 text-[10px] text-gray-500 text-center font-medium uppercase tracking-widest">
+        We ensure daily winning
       </div>
     </div>
   );
