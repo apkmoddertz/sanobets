@@ -21,26 +21,28 @@ import UserManagement from './components/UserManagement';
 
 function AppContent() {
   const { user, userProfile, loading, isAdminMode } = useAuth();
-
-// Consider app loading if auth is loading OR user exists but profile hasn't loaded yet
-const appLoading = loading || (user && !userProfile);
   const { predictions } = usePredictions();
   const [currentView, setCurrentView] = useState<'free' | 'safe' | 'fixed' | 'account' | 'members' | 'users'>('free');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('soccer');
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
 
-  if (appLoading) {
-  return (
-    <div className="min-h-screen bg-[#141517] flex items-center justify-center">
-      <Loader2 className="animate-spin text-emerald-500" size={32} />
-    </div>
-  );
-}
+  // Scroll to top on mount (login/refresh)
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
-if (!user) {
-  return <LoginPage />;
-}
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#141517] flex items-center justify-center">
+        <Loader2 className="animate-spin text-emerald-500" size={32} />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
 
   if (isAdminMode) {
     return (
@@ -91,7 +93,7 @@ if (!user) {
 
   // Group by date
   const groupedPredictions = filteredPredictions.reduce((groups, prediction) => {
-    const date = new Date(prediction.date).toLocaleDateString(undefined, {
+    const date = new Date(prediction.startTime).toLocaleDateString(undefined, {
       weekday: 'long',
       year: 'numeric',
       month: 'long',

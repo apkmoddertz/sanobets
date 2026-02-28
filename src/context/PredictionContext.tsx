@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Prediction } from '../types';
 import { db } from '../lib/firebase';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { useAuth } from './AuthContext';
 
 interface PredictionContextType {
   predictions: Prediction[];
@@ -13,6 +14,7 @@ const PredictionContext = createContext<PredictionContextType>({} as PredictionC
 export const usePredictions = () => useContext(PredictionContext);
 
 export const PredictionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +64,7 @@ export const PredictionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user]); // Re-fetch when user changes (login/logout)
 
   return (
     <PredictionContext.Provider value={{ predictions, loading }}>
