@@ -22,7 +22,10 @@ export default function LoginPage() {
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
       }
+      // Auto-refresh to ensure clean state after login
+      window.location.reload();
     } catch (err: any) {
+      console.error("Login Error:", err);
       const authError = err as AuthError;
       let message = 'An error occurred';
       if (authError.code === 'auth/invalid-email') message = 'Invalid email address';
@@ -31,7 +34,9 @@ export default function LoginPage() {
       if (authError.code === 'auth/wrong-password') message = 'Incorrect password';
       if (authError.code === 'auth/email-already-in-use') message = 'Email already in use';
       if (authError.code === 'auth/weak-password') message = 'Password should be at least 6 characters';
-      setError(message);
+      if (authError.code === 'auth/too-many-requests') message = 'Too many attempts. Please try again later.';
+      if (authError.code === 'auth/network-request-failed') message = 'Network error. Check your connection.';
+      setError(authError.message || message);
     } finally {
       setLoading(false);
     }
